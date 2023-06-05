@@ -21,16 +21,18 @@ type AppleMapsSDK interface {
 	GenerateAccessToken(keyID, teamID string) (string, error)
 
 	// Geocode geocodes the specified address and returns the location (lat/long)
-	Geocode(address string) error
+	Geocode(address string, limitToCountries []string, lang string, searchLocation location.Location) error
 
 	// ReverseGeocode returns the address located at a specific location (lat/long)
 	ReverseGeocode(loc location.Location, lang string) error
 
 	// Search searches for POIs ....
-	Search(query string, lang string)
+	//Search(query string, lang string)
 }
 
-type appleMapsSDK struct{}
+type appleMapsSDK struct {
+	jwtToken string
+}
 
 func (sdk appleMapsSDK) GenerateAccessToken(keyID, teamID string) (string, error) {
 	var secret []byte // TODO: ...
@@ -47,7 +49,7 @@ func (sdk appleMapsSDK) GenerateAccessToken(keyID, teamID string) (string, error
 	return t, err
 }
 
-func (sdk appleMapsSDK) Geocode(address string) error {
+func (sdk appleMapsSDK) Geocode(address string, limitToCountries []string, lang string, searchLocation location.Location) error {
 	_, err := http.NewRequest(http.MethodGet, urlWithPath(geocodePath), nil)
 	if err != nil {
 		return err
@@ -55,13 +57,12 @@ func (sdk appleMapsSDK) Geocode(address string) error {
 	return nil
 }
 
-// New creates a new instance of the Apple Maps Server SDK
-func New(keyID, teamID string) *AppleMapsSDK {
+func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) error {
 	return nil
 }
 
-func NewWithToken(token string) *AppleMapsSDK {
-	return &appleMapsSDK{}
+func NewWithToken(token string) AppleMapsSDK {
+	return &appleMapsSDK{token}
 }
 
 func urlWithPath(path string) string {
@@ -72,5 +73,5 @@ func main() {
 
 	jwtToken := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlBDQTY1MjkzTk0ifQ.eyJpc3MiOiIyU01GTE02NlI5IiwiaWF0IjoxNjg1OTcyOTkyLCJleHAiOjE2OTU5NDU2MDB9.zP4GVNw5lWRUiHa1irk1R3yItlYjUC_kBQG4jszU3JKUjR_CxVuZ6Iq9ySD-N4NPFhew1i2MIe9nZDGjVypgfw"
 
-	sdk := NewWithToken(jwtToken)
+	_ = NewWithToken(jwtToken)
 }
