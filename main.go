@@ -58,6 +58,7 @@ func (sdk appleMapsSDK) Geocode(address string, limitToCountries []string, lang 
 }
 
 func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) error {
+	
 	return nil
 }
 
@@ -73,5 +74,9 @@ func main() {
 
 	jwtToken := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlBDQTY1MjkzTk0ifQ.eyJpc3MiOiIyU01GTE02NlI5IiwiaWF0IjoxNjg1OTcyOTkyLCJleHAiOjE2OTU5NDU2MDB9.zP4GVNw5lWRUiHa1irk1R3yItlYjUC_kBQG4jszU3JKUjR_CxVuZ6Iq9ySD-N4NPFhew1i2MIe9nZDGjVypgfw"
 
-	_ = NewWithToken(jwtToken)
+	loc := location.New(60.382778, 5.316600)
+	err := NewWithToken(jwtToken).ReverseGeocode(loc, "NO")
+	if err != nil {
+		panic(err)
+	}
 }
