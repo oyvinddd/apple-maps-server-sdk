@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/oyvinddd/apple-maps-server-sdk/location"
@@ -76,9 +77,13 @@ func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) ([]pl
 		return nil, err
 	}
 
-	fmt.Println(res.Body)
+	var places []place.Place
+	if err := json.NewDecoder(res.Body).Decode(&places); err != nil {
+		fmt.Print(res.StatusCode)
+		return nil, err
+	}
 
-	return nil, nil // TODO: ...
+	return places, nil
 }
 
 func NewWithToken(token string) AppleMapsSDK {
