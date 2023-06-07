@@ -3,12 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"github.com/oyvinddd/apple-maps-server-sdk/location"
-	"github.com/oyvinddd/apple-maps-server-sdk/place"
+	"github.com/oyvinddd/apple-maps-server-sdk/token"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 const (
@@ -21,16 +19,13 @@ const (
 
 type AppleMapsSDK interface {
 	// GenerateAccessToken generates a JWT token for accessing Apple APIs
-	GenerateAccessToken(keyID, teamID string) (string, error)
+	GenerateAccessToken() (token.AccessToken, error)
 
 	// Geocode geocodes the specified address and returns the location (lat/long)
 	Geocode(address string, countries []string, lang string, searchLocation location.Location) error
 
 	// ReverseGeocode returns the address located at a specific location (lat/long)
-	ReverseGeocode(loc location.Location, lang string) ([]place.Place, error)
-
-	// Search searches for POIs ....
-	//Search(query string, lang string)
+	ReverseGeocode(loc location.Location, lang string) ([]location.Place, error)
 }
 
 type appleMapsSDK struct {
@@ -39,19 +34,22 @@ type appleMapsSDK struct {
 	client http.Client
 }
 
-func (sdk appleMapsSDK) GenerateAccessToken(keyID, teamID string) (string, error) {
-	var secret []byte // TODO: ...
-	// Create a new token object, specifying signing method and the claims
-	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"iss": teamID,
-		"kid": "SOMETHING_HERE",
-		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
-	})
+func (sdk appleMapsSDK) GenerateAccessToken() (token.AccessToken, error) {
+	req, err := buildAuthenticatedRequest(tokenPath, sdk.accessToken)
+	if err != nil {
+		return token.AccessToken{}, err
+	}
 
-	// Sign and get the complete encoded token as a string using the secret
-	t, err := token.SignedString(secret)
-	return t, err
+	res, err := sdk.client.Do(req)
+	if err != nil {
+		return token.AccessToken{}, err
+	}
+
+	var accessToken token.AccessToken
+	if err := json.NewDecoder(res.Body).Decode(&accessToken); err != nil {
+		return token.AccessToken{}, err
+	}
+	return accessToken, nil
 }
 
 func (sdk appleMapsSDK) Geocode(address string, limitToCountries []string, lang string, searchLocation location.Location) error {
@@ -62,22 +60,20 @@ func (sdk appleMapsSDK) Geocode(address string, limitToCountries []string, lang 
 	return nil
 }
 
-func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) ([]place.Place, error) {
+func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) ([]location.Place, error) {
 	req, err := buildAuthenticatedRequest(reverseGeocodePath, sdk.accessToken)
 
 	req.URL.RawQuery = url.Values{
 		"loc":  {loc.String()},
-		"lang": {"en-US"}, // default value
+		"lang": {lang}, // default = en-US
 	}.Encode()
-
-	fmt.Printf("FULL URL: %s", req.URL.RawQuery)
 
 	res, err := sdk.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var places []place.Place
+	var places []location.Place
 	if err := json.NewDecoder(res.Body).Decode(&places); err != nil {
 		fmt.Print(res.StatusCode)
 		return nil, err
@@ -95,17 +91,15 @@ func buildAuthenticatedRequest(path, accessToken string) (*http.Request, error) 
 	if err != nil {
 		return nil, err
 	}
-	// FIXME: we're using the wrong access token here. Access token from API endpoint should be used instead.
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	return req, nil
 }
 
 func main() {
 
-	jwtToken := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlBDQTY1MjkzTk0ifQ.eyJpc3MiOiIyU01GTE02NlI5IiwiaWF0IjoxNjg1OTcyOTkyLCJleHAiOjE2OTU5NDU2MDB9.zP4GVNw5lWRUiHa1irk1R3yItlYjUC_kBQG4jszU3JKUjR_CxVuZ6Iq9ySD-N4NPFhew1i2MIe9nZDGjVypgfw"
+	jwtToken := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlpHSk5IWTQ4N1MifQ.eyJpc3MiOiIyU01GTE02NlI5IiwiaWF0IjoxNjg2MTM5MzkzLCJleHAiOjE2ODg3MzExODh9.NhMY58eABMdHw366XCX5dlH2nWFUjqJ20Pye7UTk3gy9ADH3eFhGBvJAIue3SCdKkPOPfqBYjitFIM4V67ES0g"
 
-	loc := location.New(60.382778, 5.316600)
-	_, err := NewWithToken(jwtToken).ReverseGeocode(loc, "NO")
+	_, err := NewWithToken(jwtToken).GenerateAccessToken()
 	if err != nil {
 		panic(err)
 	}
