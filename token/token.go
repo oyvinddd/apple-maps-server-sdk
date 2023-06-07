@@ -1,10 +1,8 @@
 package token
 
 type AccessToken struct {
-	Token      string `json:"accessToken"`
-	Expiration int    `json:"expiresInSeconds"`
-}
-
-func GenerateJWTToken() (string, error) {
-	return "", nil
+	// AccessToken a JWT access token
+	Token string `json:"accessToken"`
+	// Expiration the expiration (in seconds) for the access token
+	Expiration int `json:"expiresInSeconds"`
 }

@@ -112,7 +112,7 @@ const (
 	// Restroom a restroom
 	Restroom string = "Restroom"
 
-	// 	School a school
+	// School a school
 	School string = "School"
 
 	// Stadium a stadium

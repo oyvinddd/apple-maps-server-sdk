@@ -6,7 +6,7 @@ From Apple: _"Use this web-based service to streamline your app’s API by movin
 
 ## Installation
 
-As a prerequisite you obviously need to have [Go](https://go.dev) installed. To add `apple-maps-server-sdk` as a dependency to your project, run the commend below.
+As a prerequisite you obviously need to have [Go](https://go.dev) installed.  Run the below command to add the `apple-maps-server-sdk` as a dependency to your project.
 
 ```go get -u github.com/oyvinddd/apple-maps-server-sdk```
 
