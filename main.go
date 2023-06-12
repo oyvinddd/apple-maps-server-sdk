@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/oyvinddd/apple-maps-server-sdk/location"
 	"github.com/oyvinddd/apple-maps-server-sdk/token"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -29,13 +31,15 @@ type AppleMapsSDK interface {
 }
 
 type appleMapsSDK struct {
+	authorizationToken string
+
 	accessToken string
 
 	client http.Client
 }
 
 func (sdk appleMapsSDK) GenerateAccessToken() (token.AccessToken, error) {
-	req, err := buildAuthenticatedRequest(tokenPath, sdk.accessToken)
+	req, err := buildAuthenticatedRequest(tokenPath, sdk.authorizationToken)
 	if err != nil {
 		return token.AccessToken{}, err
 	}
@@ -52,7 +56,7 @@ func (sdk appleMapsSDK) GenerateAccessToken() (token.AccessToken, error) {
 	return accessToken, nil
 }
 
-func (sdk appleMapsSDK) Geocode(address string, limitToCountries []string, lang string, searchLocation location.Location) error {
+func (sdk appleMapsSDK) Geocode(query string, limitToCountries []string, lang string, searchLocation location.Location) error {
 	_, err := buildAuthenticatedRequest(http.MethodGet, sdk.accessToken)
 	if err != nil {
 		return err
@@ -83,24 +87,31 @@ func (sdk appleMapsSDK) ReverseGeocode(loc location.Location, lang string) ([]lo
 }
 
 func NewWithToken(token string) AppleMapsSDK {
-	return &appleMapsSDK{token, http.Client{}}
+	return &appleMapsSDK{token, "", http.Client{}}
 }
 
-func buildAuthenticatedRequest(path, accessToken string) (*http.Request, error) {
+func buildAuthenticatedRequest(path, token string) (*http.Request, error) {
+	if token == "" {
+		return nil, errors.New("unauthorized - no access token present")
+	}
+
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", apiURL, path), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	return req, nil
 }
 
 func main() {
 
 	jwtToken := "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlpHSk5IWTQ4N1MifQ.eyJpc3MiOiIyU01GTE02NlI5IiwiaWF0IjoxNjg2MTM5MzkzLCJleHAiOjE2ODg3MzExODh9.NhMY58eABMdHw366XCX5dlH2nWFUjqJ20Pye7UTk3gy9ADH3eFhGBvJAIue3SCdKkPOPfqBYjitFIM4V67ES0g"
+	appleMapsSDK := NewWithToken(jwtToken)
 
-	_, err := NewWithToken(jwtToken).GenerateAccessToken()
+	places, err := appleMapsSDK.ReverseGeocode(location.New(60.0, 5.0), "en-US")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
+
+	fmt.Println(places)
 }
