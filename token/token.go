@@ -7,3 +7,7 @@ type AccessToken struct {
 	// Expiration the expiration (in seconds) for the access token
 	Expiration int `json:"expiresInSeconds"`
 }
+
+func (at AccessToken) Empty() bool {
+	return len(at.Token) == 0 && at.Expiration == 0
+}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/oyvinddd/apple-maps-server-sdk/location"
 	"github.com/oyvinddd/apple-maps-server-sdk/token"
@@ -31,11 +30,9 @@ type AppleMapsSDK interface {
 }
 
 type appleMapsSDK struct {
-	authorizationToken string
+	httpClient http.Client
 
-	accessToken string
-
-	client http.Client
+	tokenManager token.Manager
 }
 
 func (sdk appleMapsSDK) GenerateAccessToken() (token.AccessToken, error) {
@@ -90,10 +87,7 @@ func NewWithToken(token string) AppleMapsSDK {
 	return &appleMapsSDK{token, "", http.Client{}}
 }
 
-func buildAuthenticatedRequest(path, token string) (*http.Request, error) {
-	if token == "" {
-		return nil, errors.New("unauthorized - no access token present")
-	}
+func (sdk appleMapsSDK) buildAuthenticatedRequest(path string) (*http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", apiURL, path), nil)
 	if err != nil {
